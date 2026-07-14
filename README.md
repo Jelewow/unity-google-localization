@@ -34,7 +34,7 @@ Add it via the Package Manager using a Git URL:
 2. Paste:
 
 ```
-https://github.com/jelewow/unity-sheets-localization.git
+https://github.com/Jelewow/unity-google-localization.git
 ```
 
 Or add it to `Packages/manifest.json`:
@@ -42,7 +42,7 @@ Or add it to `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "com.jelewow.unity-sheets-localization": "https://github.com/jelewow/unity-sheets-localization.git"
+    "com.jelewow.unity-sheets-localization": "https://github.com/Jelewow/unity-google-localization.git"
   }
 }
 ```
