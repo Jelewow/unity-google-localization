@@ -69,20 +69,6 @@ namespace SheetsLocalization.Editor.Services
             return headers;
         }
 
-        public bool WasTokenExpire()
-        {
-            var cache = string.IsNullOrEmpty(_cachedAccessToken);
-            var wasExpire = DateTime.UtcNow > _tokenExpiryTime;
-
-            return cache && wasExpire;
-        }
-
-        public void ClearTokenCache()
-        {
-            _cachedAccessToken = null;
-            _tokenExpiryTime = DateTime.MinValue;
-        }
-
         private async Task<string> GetServiceAccountAccessTokenAsync()
         {
             if (!string.IsNullOrEmpty(_cachedAccessToken) && DateTime.UtcNow < _tokenExpiryTime)

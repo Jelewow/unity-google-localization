@@ -1,7 +1,7 @@
 using SheetsLocalization.Editor.Types;
+using SheetsLocalization.Editor.Utils;
 using UnityEditor.Localization;
 using UnityEngine;
-using UnityEngine.Localization;
 using UnityEngine.Localization.Tables;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -55,9 +55,7 @@ namespace SheetsLocalization.Editor.Services
                 return audioClips;
             }
 
-            var audioExtensions = new[] { "*.mp3", "*.wav", "*.ogg", "*.m4a", "*.aac", "*.flac" };
-
-            foreach (var pattern in audioExtensions)
+            foreach (var pattern in AudioFileTypes.SearchPatterns)
             {
                 var files = Directory.GetFiles(audioDirectory, pattern, SearchOption.AllDirectories);
                 foreach (var file in files)
@@ -212,7 +210,7 @@ namespace SheetsLocalization.Editor.Services
                 var fileName = audioEntry.Key;
                 var audioClip = audioEntry.Value;
 
-                var match = Regex.Match(fileName, @"^(.+?)_([a-z]{2})$");
+                var match = Regex.Match(fileName, @"^(.+?)_([a-zA-Z]{2}(?:-[a-zA-Z]{2,4})?)$");
                 if (match.Success)
                 {
                     var key = match.Groups[1].Value;
@@ -233,41 +231,6 @@ namespace SheetsLocalization.Editor.Services
 
             Debug.Log($"Extracted {result.Count} unique audio keys from {audioClips.Count} files");
             return result;
-        }
-
-        private Locale GetOrCreateLocale(string localeCode, string tablePath)
-        {
-            var existingLocales = LocalizationEditorSettings.GetLocales();
-            foreach (var locale in existingLocales)
-            {
-                if (locale.Identifier.Code == localeCode)
-                {
-                    return locale;
-                }
-            }
-
-            try
-            {
-                var systemLanguage = LocaleCodeMapper.ToSystemLanguage(localeCode);
-                var newLocale = Locale.CreateLocale(systemLanguage);
-
-                var localesPath = Path.Combine(tablePath, "../Locales");
-                var localePath = $"{localesPath}/{localeCode}.asset";
-                Directory.CreateDirectory(Path.GetDirectoryName(localePath));
-                AssetDatabase.CreateAsset(newLocale, localePath);
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-
-                LocalizationEditorSettings.AddLocale(newLocale);
-
-                Debug.Log($"Created new locale: {localeCode} ({newLocale.LocaleName})");
-                return newLocale;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Failed to create locale '{localeCode}': {ex.Message}");
-                return null;
-            }
         }
 
         private EntryUpdateResult UpdateCollectionIncrementally(AssetTableCollection collection, Dictionary<string, Dictionary<string, AudioClip>> newData, string tablePath, bool removeObsoleteEntries = false)
@@ -333,11 +296,9 @@ namespace SheetsLocalization.Editor.Services
                     {
                         if (entry.Guid != newAssetGuid)
                         {
-                            var oldGuid = entry.Guid;
                             entry.Guid = newAssetGuid;
                             entry.Address = newAssetGuid;
                             wasEntryUpdated = true;
-                            Debug.Log($"Updated audio entry '{entryKey}' for locale '{localeCode}': GUID changed from '{oldGuid}' to '{newAssetGuid}'");
                         }
                     }
                 }
@@ -345,7 +306,6 @@ namespace SheetsLocalization.Editor.Services
                 if (isNewEntry && wasEntryUpdated)
                 {
                     results.AddedEntries++;
-                    Debug.Log($"Added new audio entry: '{entryKey}'");
                 }
                 else if (!isNewEntry && wasEntryUpdated)
                 {
@@ -360,7 +320,6 @@ namespace SheetsLocalization.Editor.Services
                 {
                     RemoveEntryFromAssetCollection(collection, keyToRemove);
                     results.RemovedEntries++;
-                    Debug.Log($"Removed obsolete audio entry: '{keyToRemove}'");
                 }
             }
             else if (existingKeys.Except(newKeys).Any())
@@ -401,7 +360,7 @@ namespace SheetsLocalization.Editor.Services
                 }
             }
 
-            var locale = GetOrCreateLocale(localeCode, tablePath);
+            var locale = LocaleFactory.GetOrCreateLocale(localeCode, tablePath);
             if (locale == null)
             {
                 Debug.LogError($"Failed to create locale for code '{localeCode}'");

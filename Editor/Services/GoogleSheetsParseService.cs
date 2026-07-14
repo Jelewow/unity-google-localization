@@ -22,11 +22,11 @@ namespace SheetsLocalization.Editor.Services
         private const char ParagraphSeparator = (char)0x2029; // Unicode PARAGRAPH SEPARATOR
         private const char NextLine = (char)0x0085;           // Unicode NEXT LINE (NEL)
 
-        private readonly GoogleAuthService authService;
+        private readonly GoogleAuthService _authService;
 
         public GoogleSheetsParseService(GoogleAuthService authService)
         {
-            this.authService = authService;
+            _authService = authService;
         }
 
         public async Task<RawSheetData> GetRawSheetDataAsync(string sheetUrl,
@@ -39,7 +39,7 @@ namespace SheetsLocalization.Editor.Services
                 var spreadsheetId = ExtractSpreadsheetId(sheetUrl);
 
                 Debug.Log($"Fetching raw data from Google Sheets: {spreadsheetId}");
-                Debug.Log($"Using authentication: {authService.ActiveCredentialsInfo}");
+                Debug.Log($"Using authentication: {_authService.ActiveCredentialsInfo}");
 
                 var spreadsheetTitle = await FetchSpreadsheetTitleAsync(spreadsheetId);
 
@@ -148,7 +148,8 @@ namespace SheetsLocalization.Editor.Services
 
         private async Task<List<List<string>>> FetchSheetValuesAsync(string spreadsheetId, string sheetName)
         {
-            var baseUrl = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{sheetName}?valueRenderOption=FORMATTED_VALUE";
+            var escapedSheetName = Uri.EscapeDataString(sheetName);
+            var baseUrl = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{escapedSheetName}?valueRenderOption=FORMATTED_VALUE";
 
             return await MakeAuthenticatedRequestAsync(baseUrl, response =>
             {
@@ -182,11 +183,11 @@ namespace SheetsLocalization.Editor.Services
         private async Task<T> MakeAuthenticatedRequestAsync<T>(string baseUrl, Func<string, T> responseParser)
         {
             string accessToken = null;
-            if (authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
+            if (_authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
             {
                 try
                 {
-                    accessToken = await authService.GetAccessTokenAsync();
+                    accessToken = await _authService.GetAccessTokenAsync();
                 }
                 catch (Exception ex)
                 {
@@ -195,11 +196,11 @@ namespace SheetsLocalization.Editor.Services
                 }
             }
 
-            var url = authService.BuildAuthenticatedUrl(baseUrl, accessToken);
+            var url = _authService.BuildAuthenticatedUrl(baseUrl, accessToken);
             using var request = UnityWebRequest.Get(url);
             request.timeout = 30;
 
-            var headers = authService.GetAuthenticationHeaders(accessToken);
+            var headers = _authService.GetAuthenticationHeaders(accessToken);
             foreach (var header in headers)
             {
                 request.SetRequestHeader(header.Key, header.Value);
@@ -241,7 +242,7 @@ namespace SheetsLocalization.Editor.Services
                            "- API key: make sure the key is correct";
 
                 case 403:
-                    var authType = authService.CurrentAuthType == GoogleAuthType.ServiceAccount ? "the service account" : "the API key";
+                    var authType = _authService.CurrentAuthType == GoogleAuthType.ServiceAccount ? "the service account" : "the API key";
                     return $"{baseMessage}\n" +
                            $"ERROR 403 FORBIDDEN - access denied for {authType}:\n" +
                            "1. The document must be publicly accessible (for API key auth)\n" +

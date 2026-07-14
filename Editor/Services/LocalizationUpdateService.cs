@@ -1,9 +1,9 @@
 using System;
 using SheetsLocalization.Editor.Types;
+using SheetsLocalization.Editor.Utils;
 using UnityEditor.Localization;
 using UnityEngine;
 using UnityEngine.Localization.Tables;
-using UnityEngine.Localization;
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
@@ -112,10 +112,8 @@ namespace SheetsLocalization.Editor.Services
                     {
                         if (entry.Value != newValue)
                         {
-                            var oldValue = entry.Value;
                             entry.Value = newValue;
                             wasEntryUpdated = true;
-                            Debug.Log($"Updated entry '{entryKey}' for locale '{localeCode}': '{oldValue}' -> '{newValue}'");
                         }
                     }
                 }
@@ -123,7 +121,6 @@ namespace SheetsLocalization.Editor.Services
                 if (isNewEntry && wasEntryUpdated)
                 {
                     results.AddedEntries++;
-                    Debug.Log($"Added new entry: '{entryKey}'");
                 }
                 else if (!isNewEntry && wasEntryUpdated)
                 {
@@ -138,7 +135,6 @@ namespace SheetsLocalization.Editor.Services
                 {
                     RemoveEntryFromCollection(collection, keyToRemove);
                     results.RemovedEntries++;
-                    Debug.Log($"Removed obsolete entry: '{keyToRemove}'");
                 }
             }
             else if (existingKeys.Except(newKeys).Any())
@@ -179,7 +175,7 @@ namespace SheetsLocalization.Editor.Services
                 }
             }
 
-            var locale = GetOrCreateLocale(localeCode.Trim(), tablePath);
+            var locale = LocaleFactory.GetOrCreateLocale(localeCode, tablePath);
             if (locale == null)
             {
                 Debug.LogError($"Failed to create locale for code '{localeCode}'");
@@ -197,47 +193,11 @@ namespace SheetsLocalization.Editor.Services
             return newTable;
         }
 
-        private Locale GetOrCreateLocale(string localeCode, string tablePath)
-        {
-            localeCode = localeCode.Trim();
-            var existingLocales = LocalizationEditorSettings.GetLocales();
-            foreach (var locale in existingLocales)
-            {
-                if (string.Equals(locale.Identifier.Code, localeCode, StringComparison.OrdinalIgnoreCase))
-                {
-                    return locale;
-                }
-            }
-
-            try
-            {
-                var systemLanguage = LocaleCodeMapper.ToSystemLanguage(localeCode);
-                var newLocale = Locale.CreateLocale(systemLanguage);
-
-                var localesPath = Path.Combine(tablePath, "../Locales");
-                var localePath = $"{localesPath}/{localeCode}.asset";
-                Directory.CreateDirectory(Path.GetDirectoryName(localePath));
-                AssetDatabase.CreateAsset(newLocale, localePath);
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-
-                LocalizationEditorSettings.AddLocale(newLocale);
-
-                Debug.Log($"Created new locale: {localeCode} ({newLocale.LocaleName})");
-                return newLocale;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Failed to create locale '{localeCode}': {ex.Message}");
-                return null;
-            }
-        }
-
         private StringTableCollection CreateNewStringTableCollection(string tablePath, string tableName = null)
         {
             try
             {
-                if (string.IsNullOrEmpty(tablePath) && !Path.IsPathRooted(tablePath))
+                if (string.IsNullOrEmpty(tablePath))
                 {
                     Debug.LogError($"Failed to create table, the path is empty or invalid - {tablePath}");
                     return null;

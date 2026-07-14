@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using SheetsLocalization.Editor.Utils;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -127,10 +128,9 @@ namespace SheetsLocalization.Editor.Services
                 settings.AddLabel(groupName);
             }
 
-            var audioExtensions = new[] { "*.mp3", "*.wav", "*.ogg", "*.m4a", "*.aac", "*.flac" };
             int assignedCount = 0;
 
-            foreach (var pattern in audioExtensions)
+            foreach (var pattern in AudioFileTypes.SearchPatterns)
             {
                 var files = Directory.GetFiles(audioDirectory, pattern, SearchOption.AllDirectories);
                 foreach (var file in files)

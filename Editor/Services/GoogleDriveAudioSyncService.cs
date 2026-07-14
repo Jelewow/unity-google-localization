@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SheetsLocalization.Editor.Types;
 using SheetsLocalization.Editor.Credentials;
+using SheetsLocalization.Editor.Utils;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -16,11 +17,11 @@ namespace SheetsLocalization.Editor.Services
 {
     public class GoogleDriveAudioSyncService
     {
-        private readonly GoogleAuthService authService;
+        private readonly GoogleAuthService _authService;
 
         public GoogleDriveAudioSyncService(GoogleAuthService authService)
         {
-            this.authService = authService;
+            _authService = authService;
         }
 
         /// <summary>
@@ -59,18 +60,18 @@ namespace SheetsLocalization.Editor.Services
                 var folderId = ExtractFolderIdFromUrl(folderUrl);
 
                 string accessToken = null;
-                if (authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
+                if (_authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
                 {
-                    accessToken = await authService.GetAccessTokenAsync();
+                    accessToken = await _authService.GetAccessTokenAsync();
                 }
 
                 var baseUrl = $"https://www.googleapis.com/drive/v3/files/{folderId}?fields=name";
-                var url = authService.BuildAuthenticatedUrl(baseUrl, accessToken);
+                var url = _authService.BuildAuthenticatedUrl(baseUrl, accessToken);
 
                 using var request = UnityWebRequest.Get(url);
                 request.timeout = 15;
 
-                var headers = authService.GetAuthenticationHeaders(accessToken);
+                var headers = _authService.GetAuthenticationHeaders(accessToken);
                 foreach (var header in headers)
                 {
                     request.SetRequestHeader(header.Key, header.Value);
@@ -131,17 +132,17 @@ namespace SheetsLocalization.Editor.Services
                 baseUrl += $"&pageToken={pageToken}";
 
             string accessToken = null;
-            if (authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
+            if (_authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
             {
-                accessToken = await authService.GetAccessTokenAsync();
+                accessToken = await _authService.GetAccessTokenAsync();
             }
 
-            var url = authService.BuildAuthenticatedUrl(baseUrl, accessToken);
+            var url = _authService.BuildAuthenticatedUrl(baseUrl, accessToken);
 
             using var request = UnityWebRequest.Get(url);
             request.timeout = 30;
 
-            var headers = authService.GetAuthenticationHeaders(accessToken);
+            var headers = _authService.GetAuthenticationHeaders(accessToken);
             foreach (var header in headers)
             {
                 request.SetRequestHeader(header.Key, header.Value);
@@ -188,9 +189,7 @@ namespace SheetsLocalization.Editor.Services
             if (!string.IsNullOrEmpty(mimeType) && mimeType.StartsWith("audio/"))
                 return true;
 
-            var extension = Path.GetExtension(fileName).ToLower();
-            var audioExtensions = new[] { ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac" };
-            return audioExtensions.Contains(extension);
+            return AudioFileTypes.HasAudioExtension(fileName);
         }
 
         private Dictionary<string, string> GetLocalAudioFiles(string localPath)
@@ -203,9 +202,7 @@ namespace SheetsLocalization.Editor.Services
                 return localFiles;
             }
 
-            var audioExtensions = new[] { "*.mp3", "*.wav", "*.ogg", "*.m4a", "*.aac", "*.flac" };
-
-            foreach (var pattern in audioExtensions)
+            foreach (var pattern in AudioFileTypes.SearchPatterns)
             {
                 var files = Directory.GetFiles(localPath, pattern, SearchOption.AllDirectories);
                 foreach (var file in files)
@@ -298,17 +295,17 @@ namespace SheetsLocalization.Editor.Services
             var baseUrl = $"https://www.googleapis.com/drive/v3/files/{fileInfo.Id}?alt=media";
 
             string accessToken = null;
-            if (authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
+            if (_authService.CurrentAuthType == GoogleAuthType.ServiceAccount)
             {
-                accessToken = await authService.GetAccessTokenAsync();
+                accessToken = await _authService.GetAccessTokenAsync();
             }
 
-            var url = authService.BuildAuthenticatedUrl(baseUrl, accessToken);
+            var url = _authService.BuildAuthenticatedUrl(baseUrl, accessToken);
 
             using var request = UnityWebRequest.Get(url);
             request.timeout = 60; // 60s timeout for file downloads
 
-            var headers = authService.GetAuthenticationHeaders(accessToken);
+            var headers = _authService.GetAuthenticationHeaders(accessToken);
             foreach (var header in headers)
             {
                 request.SetRequestHeader(header.Key, header.Value);
@@ -406,7 +403,7 @@ namespace SheetsLocalization.Editor.Services
             diagnostics.AppendLine();
             diagnostics.AppendLine("Diagnostic info:");
             diagnostics.AppendLine($"   - Folder ID: {folderId}");
-            diagnostics.AppendLine($"   - Credentials: {authService.ActiveCredentialsInfo}");
+            diagnostics.AppendLine($"   - Credentials: {_authService.ActiveCredentialsInfo}");
 
             if (!string.IsNullOrEmpty(responseText))
             {

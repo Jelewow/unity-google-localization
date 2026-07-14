@@ -1,8 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using SheetsLocalization.Editor.Types;
-using Exception = System.Exception;
 
 namespace SheetsLocalization.Editor.Configurators
 {

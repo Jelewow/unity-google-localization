@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SheetsLocalization.Editor.Services
+namespace SheetsLocalization.Editor.Utils
 {
     /// <summary>
     /// Maps ISO-like locale codes (e.g. "en", "zh-cn") to Unity <see cref="SystemLanguage"/> values.

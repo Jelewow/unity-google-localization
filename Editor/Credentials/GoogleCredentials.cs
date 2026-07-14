@@ -50,7 +50,7 @@ namespace SheetsLocalization.Editor.Credentials
 
                 case GoogleAuthType.ApiKey:
                     return IsApiKeyConfigured()
-                        ? $"API Key: {ApiKey.Substring(0, Math.Min(10, ApiKey.Length))}..."
+                        ? "API Key: configured"
                         : "API Key: NOT CONFIGURED";
 
                 default:
