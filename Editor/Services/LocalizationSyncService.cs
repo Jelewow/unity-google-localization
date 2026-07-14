@@ -125,7 +125,7 @@ namespace SheetsLocalization.Editor.Services
             }
 
             new AddressableGroupService().ValidateAndAssignGroupToAllAssets(
-                settings.AddressableGroup, settings.StringTable, settings.AudioTable);
+                settings.AddressableGroup, settings.AudioFolderPath, settings.StringTable, settings.AudioTable);
 
             AssetDatabase.SaveAssets();
         }
@@ -144,7 +144,7 @@ namespace SheetsLocalization.Editor.Services
             Debug.Log($"Validating and assigning group '{settings.AddressableGroup}' to all localization files...");
 
             new AddressableGroupService().ValidateAndAssignGroupToAllAssets(
-                settings.AddressableGroup, settings.StringTable, settings.AudioTable);
+                settings.AddressableGroup, settings.AudioFolderPath, settings.StringTable, settings.AudioTable);
 
             AssetDatabase.SaveAssets();
             Debug.Log("Group validation completed.");

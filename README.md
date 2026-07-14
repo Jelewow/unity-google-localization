@@ -1,5 +1,6 @@
 # Sheets Localization Sync
 
+[![openupm](https://img.shields.io/npm/v/com.jelewow.unity-sheets-localization?label=openupm&registry_uri=https://package.openupm.com&color=3068b7)](https://openupm.com/packages/com.jelewow.unity-sheets-localization/)
 ![Unity](https://img.shields.io/badge/Unity-2022.3%2B-000000?logo=unity&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-9.0-239120?logo=csharp&logoColor=white)
 ![Google](https://img.shields.io/badge/Google-Sheets%20%26%20Drive-4285F4?logo=google&logoColor=white)

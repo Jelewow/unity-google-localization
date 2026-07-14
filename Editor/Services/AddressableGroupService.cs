@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SheetsLocalization.Editor.Utils;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -10,8 +11,7 @@ using UnityEngine;
 namespace SheetsLocalization.Editor.Services
 {
     /// <summary>
-    /// Assigns generated localization tables and their referenced audio clips to an existing
-    /// Addressables group and label.
+    /// Assigns generated localization tables and their audio clips to an existing Addressables group and label.
     /// </summary>
     public class AddressableGroupService
     {
@@ -49,27 +49,10 @@ namespace SheetsLocalization.Editor.Services
                 Debug.Log($"Addressables: assigned group '{groupName}' to {assignedCount} localization tables");
         }
 
-        public void ValidateAndAssignGroupToAllAssets(string groupName, StringTableCollection stringTableCollection, AssetTableCollection assetTableCollection)
+        public void ValidateAndAssignGroupToAllAssets(string groupName, string audioDirectory,
+            StringTableCollection stringTableCollection, AssetTableCollection assetTableCollection)
         {
             if (string.IsNullOrEmpty(groupName))
-                return;
-
-            Debug.Log($"Addressables: validating and assigning group '{groupName}' to all assets");
-
-            AssignGroupToTables(groupName, stringTableCollection, assetTableCollection);
-            AssignGroupToAudioClips(groupName, assetTableCollection);
-
-            AddressableAssetSettingsDefaultObject.GetSettings(true)
-                .SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true);
-
-            Debug.Log("Addressables: validation and assignment completed");
-        }
-
-        // Assigns the group to the clips the audio table actually references (by GUID), so the assignment
-        // works regardless of where the clips are stored on disk.
-        private void AssignGroupToAudioClips(string groupName, AssetTableCollection assetTableCollection)
-        {
-            if (assetTableCollection == null)
                 return;
 
             var settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
@@ -77,29 +60,68 @@ namespace SheetsLocalization.Editor.Services
             if (group == null)
                 return;
 
-            var assignedGuids = new HashSet<string>();
+            Debug.Log($"Addressables: validating and assigning group '{groupName}' to all assets");
+
+            AssignGroupToTables(groupName, stringTableCollection, assetTableCollection);
+
+            // Assign the group to the audio clips both referenced by the table (by GUID) and physically
+            // present in the audio folder, so the assignment is robust to a stale table or an out-of-sync folder.
+            var assignedClipGuids = new HashSet<string>();
+            AssignGroupToTableClips(settings, group, groupName, assetTableCollection, assignedClipGuids);
+            AssignGroupToFolderClips(settings, group, groupName, audioDirectory, assignedClipGuids);
+
+            if (assignedClipGuids.Count > 0)
+                Debug.Log($"Addressables: assigned group '{groupName}' to {assignedClipGuids.Count} audio clips");
+
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true);
+
+            Debug.Log("Addressables: validation and assignment completed");
+        }
+
+        private void AssignGroupToTableClips(AddressableAssetSettings settings, AddressableAssetGroup group,
+            string groupName, AssetTableCollection assetTableCollection, HashSet<string> assignedGuids)
+        {
+            if (assetTableCollection == null)
+                return;
+
             foreach (var assetTable in assetTableCollection.AssetTables)
             {
                 if (assetTable == null)
                     continue;
 
                 foreach (var entry in assetTable.Values)
+                    AssignGroupToClipGuid(settings, group, groupName, entry?.Guid, assignedGuids);
+            }
+        }
+
+        private void AssignGroupToFolderClips(AddressableAssetSettings settings, AddressableAssetGroup group,
+            string groupName, string audioDirectory, HashSet<string> assignedGuids)
+        {
+            if (string.IsNullOrEmpty(audioDirectory) || !Directory.Exists(audioDirectory))
+                return;
+
+            foreach (var pattern in AudioFileTypes.SearchPatterns)
+            {
+                foreach (var file in Directory.GetFiles(audioDirectory, pattern, SearchOption.AllDirectories))
                 {
-                    var guid = entry?.Guid;
-                    if (string.IsNullOrEmpty(guid) || !assignedGuids.Add(guid))
-                        continue;
-
-                    var addressableEntry = settings.CreateOrMoveEntry(guid, group, false, false);
-                    if (addressableEntry == null)
-                        continue;
-
-                    addressableEntry.address = Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
-                    UpdateEntryLabels(addressableEntry, groupName);
+                    var guid = AssetDatabase.AssetPathToGUID(file.Replace('\\', '/'));
+                    AssignGroupToClipGuid(settings, group, groupName, guid, assignedGuids);
                 }
             }
+        }
 
-            if (assignedGuids.Count > 0)
-                Debug.Log($"Addressables: assigned group '{groupName}' to {assignedGuids.Count} audio clips");
+        private void AssignGroupToClipGuid(AddressableAssetSettings settings, AddressableAssetGroup group,
+            string groupName, string guid, HashSet<string> assignedGuids)
+        {
+            if (string.IsNullOrEmpty(guid) || !assignedGuids.Add(guid))
+                return;
+
+            var entry = settings.CreateOrMoveEntry(guid, group, false, false);
+            if (entry == null)
+                return;
+
+            entry.address = Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+            UpdateEntryLabels(entry, groupName);
         }
 
         private AddressableAssetGroup ResolveGroup(AddressableAssetSettings settings, string groupName)
