@@ -34,26 +34,42 @@ It turns a spreadsheet-driven localization workflow (translators edit Google She
 
 ## Installation
 
-Add it via the Package Manager using a Git URL:
+### Via OpenUPM (recommended — shows updates in Package Manager)
 
-1. `Window > Package Manager > + > Add package from git URL...`
-2. Paste:
+Installing through the [OpenUPM](https://openupm.com) scoped registry lets Unity's Package Manager notify you about new versions (Git URL installs don't).
+
+With the [openupm-cli](https://openupm.com/docs/getting-started.html):
+
+```
+openupm add com.jelewow.unity-sheets-localization
+```
+
+Or add the scoped registry to `Packages/manifest.json` manually:
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": ["com.jelewow"]
+    }
+  ],
+  "dependencies": {
+    "com.jelewow.unity-sheets-localization": "1.0.0"
+  }
+}
+```
+
+### Via Git URL (quick, but no update notifications)
+
+`Window > Package Manager > + > Add package from git URL...` and paste:
 
 ```
 https://github.com/Jelewow/unity-google-localization.git
 ```
 
-Or add it to `Packages/manifest.json`:
-
-```json
-{
-  "dependencies": {
-    "com.jelewow.unity-sheets-localization": "https://github.com/Jelewow/unity-google-localization.git"
-  }
-}
-```
-
-To pin a specific version, append a release tag, e.g. `...unity-google-localization.git#v0.2.0`.
+Pin a specific version by appending a release tag, e.g. `...unity-google-localization.git#v1.0.0`.
 
 ## Quick start
 

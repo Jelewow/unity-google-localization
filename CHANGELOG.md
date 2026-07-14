@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-07-14
+
+First stable release.
+
+### Fixed
+
+- `Validate Addressables group` now moves the audio clips referenced by the asset table to the group by GUID, so it works regardless of where the clips are stored on disk.
+- Audio clips are no longer removed from Addressables and re-added when a group is selected.
+
+### Changed
+
+- Operations UI: primary `Update` buttons on top, `Validate` in a neutral color, `Test authentication` moved to the bottom.
+
 ## [0.2.1] - 2026-07-14
 
 ### Fixed

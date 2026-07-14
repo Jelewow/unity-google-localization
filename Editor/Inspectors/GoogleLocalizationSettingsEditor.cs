@@ -18,6 +18,7 @@ namespace SheetsLocalization.Editor.Inspectors
     {
         private const string NoneGroup = "(None)";
         private static readonly Color PrimaryColor = new Color(0.55f, 0.82f, 0.55f);
+        private static readonly Color NeutralColor = new Color(0.72f, 0.80f, 0.92f);
 
         private Type[] _configuratorTypes;
         private string[] _configuratorNames;
@@ -163,12 +164,8 @@ namespace SheetsLocalization.Editor.Inspectors
         {
             DrawSection("Operations", () =>
             {
-                if (GUILayout.Button(new GUIContent("Test authentication", "Verify the current credentials"), GUILayout.Height(24f)))
-                    Run("Testing authentication", _ => new LocalizationSyncService(CredentialsStore.Load()).TestAuthenticationAsync(), settings);
-
-                EditorGUILayout.Space(4f);
-
                 var previous = GUI.backgroundColor;
+
                 GUI.backgroundColor = PrimaryColor;
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -177,11 +174,11 @@ namespace SheetsLocalization.Editor.Inspectors
                     if (GUILayout.Button(new GUIContent("Update audio", "Sync audio from Google Drive"), GUILayout.Height(34f)))
                         Run("Updating audio", s => new LocalizationSyncService(CredentialsStore.Load()).UpdateAudioAsync(s), settings);
                 }
-                GUI.backgroundColor = previous;
 
                 EditorGUILayout.Space(4f);
 
-                if (GUILayout.Button(new GUIContent("Validate Addressables group", "Reassign the group/label to all generated assets"), GUILayout.Height(24f)))
+                GUI.backgroundColor = NeutralColor;
+                if (GUILayout.Button(new GUIContent("Validate Addressables group", "Reassign the group/label to all generated assets"), GUILayout.Height(26f)))
                 {
                     try
                     {
@@ -192,6 +189,12 @@ namespace SheetsLocalization.Editor.Inspectors
                         Debug.LogError($"Group validation failed: {ex.Message}");
                     }
                 }
+                GUI.backgroundColor = previous;
+
+                EditorGUILayout.Space(8f);
+
+                if (GUILayout.Button(new GUIContent("Test authentication", "Verify the current credentials"), GUILayout.Height(22f)))
+                    Run("Testing authentication", _ => new LocalizationSyncService(CredentialsStore.Load()).TestAuthenticationAsync(), settings);
             });
         }
 

@@ -147,7 +147,12 @@ namespace SheetsLocalization.Editor.Services
             var updateResults = UpdateCollectionIncrementally(assetTableCollection, audioKeysByLocale, tablePath, removeObsoleteEntries);
             Debug.Log($"Update finished: {updateResults.AddedEntries} added, {updateResults.UpdatedEntries} updated, {updateResults.RemovedEntries} removed");
 
-            RemoveAssetsFromAddressables(audioClips.Values);
+            if (string.IsNullOrEmpty(addressableGroup))
+            {
+                // No group selected: strip standalone Addressables entries.
+                // The clips remain referenced by the asset table via their GUID.
+                RemoveAssetsFromAddressables(audioClips.Values);
+            }
 
             EditorUtility.SetDirty(assetTableCollection.SharedData);
             foreach (var table in assetTableCollection.AssetTables)
