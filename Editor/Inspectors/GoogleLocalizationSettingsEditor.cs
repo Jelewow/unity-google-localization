@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SheetsLocalization.Editor.Configurators;
@@ -66,17 +67,19 @@ namespace SheetsLocalization.Editor.Inspectors
                 return;
             }
 
-            var names = settings.groups
-                .Where(g => g != null && !g.ReadOnly)
-                .Select(g => g.Name)
-                .ToList();
-            names.Insert(0, NoneGroup);
+            var options = new List<string> { NoneGroup };
+            options.AddRange(settings.groups.Where(g => g != null && !g.ReadOnly).Select(g => g.Name));
 
-            var index = string.IsNullOrEmpty(groupProp.stringValue) ? 0 : names.IndexOf(groupProp.stringValue);
-            if (index < 0) index = 0;
+            var current = groupProp.stringValue;
+            if (!string.IsNullOrEmpty(current) && !options.Contains(current))
+                options.Add(current); // preserve a renamed/removed group instead of silently clearing it
 
-            var newIndex = EditorGUILayout.Popup("Addressable group", index, names.ToArray());
-            groupProp.stringValue = newIndex <= 0 ? string.Empty : names[newIndex];
+            var index = string.IsNullOrEmpty(current) ? 0 : Mathf.Max(0, options.IndexOf(current));
+
+            EditorGUI.BeginChangeCheck();
+            var newIndex = EditorGUILayout.Popup("Addressable group", index, options.ToArray());
+            if (EditorGUI.EndChangeCheck())
+                groupProp.stringValue = newIndex <= 0 ? string.Empty : options[newIndex];
         }
 
         private void DrawPathOverride(string label, SerializedProperty toggleProp, SerializedProperty pathProp, string defaultPath)
@@ -105,7 +108,7 @@ namespace SheetsLocalization.Editor.Inspectors
                 return;
             }
 
-            if (configuratorProp.managedReferenceValue == null)
+            if (configuratorProp.managedReferenceValue == null || settings.Configurator == null)
             {
                 configuratorProp.managedReferenceValue = Activator.CreateInstance(_configuratorTypes[0]);
                 serializedObject.ApplyModifiedProperties();
@@ -114,8 +117,10 @@ namespace SheetsLocalization.Editor.Inspectors
 
             var currentType = settings.Configurator.GetType();
             var currentIndex = Array.IndexOf(_configuratorTypes, currentType);
+
+            EditorGUI.BeginChangeCheck();
             var newIndex = EditorGUILayout.Popup("Configurator", Mathf.Max(0, currentIndex), _configuratorNames);
-            if (newIndex != currentIndex && newIndex >= 0)
+            if (EditorGUI.EndChangeCheck() && newIndex >= 0 && newIndex != currentIndex)
             {
                 configuratorProp.managedReferenceValue = Activator.CreateInstance(_configuratorTypes[newIndex]);
                 serializedObject.ApplyModifiedProperties();

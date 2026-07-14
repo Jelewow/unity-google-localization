@@ -3,6 +3,7 @@ using SheetsLocalization.Editor.Credentials;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SheetsLocalization.Editor.Settings
 {
@@ -20,11 +21,14 @@ namespace SheetsLocalization.Editor.Settings
         [SerializeField] private StringTableCollection localTable;
         [SerializeField] private AssetTableCollection localAudioTable;
 
+        [FormerlySerializedAs("bundleName")]
         [SerializeField] private string addressableGroup;
 
         [SerializeField] private bool overrideTextPath;
+        [FormerlySerializedAs("localTableFolderPath")]
         [SerializeField] private string textPath = DefaultPathsStore.DefaultTextPath;
         [SerializeField] private bool overrideAudioPath;
+        [FormerlySerializedAs("localAudioFolderPath")]
         [SerializeField] private string audioPath = DefaultPathsStore.DefaultAudioPath;
 
         [SerializeReference] private GoogleSheetsConfigurator configurator = new DefaultColumnConfigurator();
