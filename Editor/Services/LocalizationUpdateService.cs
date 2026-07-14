@@ -13,14 +13,14 @@ namespace SheetsLocalization.Editor.Services
 {
     public class LocalizationUpdateService
     {
-        public StringTableData UpdateProjectData(StringTableData stringTableData, string tablePath, string bundleName = null, bool removeObsoleteEntries = false)
+        public StringTableData UpdateProjectData(StringTableData stringTableData, string tablePath, string addressableGroup = null, bool removeObsoleteEntries = false)
         {
-            var updatedData = UpdateLocalizedTable(stringTableData, tablePath, bundleName, removeObsoleteEntries);
+            var updatedData = UpdateLocalizedTable(stringTableData, tablePath, addressableGroup, removeObsoleteEntries);
             Debug.Log("Localization updated successfully.");
             return updatedData;
         }
 
-        private StringTableData UpdateLocalizedTable(StringTableData stringTableData, string tablePath, string bundleName = null, bool removeObsoleteEntries = false)
+        private StringTableData UpdateLocalizedTable(StringTableData stringTableData, string tablePath, string addressableGroup = null, bool removeObsoleteEntries = false)
         {
             if (stringTableData.Data.Table == null)
                 return stringTableData;
@@ -48,10 +48,9 @@ namespace SheetsLocalization.Editor.Services
                 EditorUtility.SetDirty(table);
             }
 
-            if (!string.IsNullOrEmpty(bundleName))
+            if (!string.IsNullOrEmpty(addressableGroup))
             {
-                var bundleAssignmentService = new AssetBundleAssignmentService();
-                bundleAssignmentService.AssignAddressableGroupToTables(bundleName, stringTableCollection, null);
+                new AddressableGroupService().AssignGroupToTables(addressableGroup, stringTableCollection, null);
             }
 
             AssetDatabase.SaveAssets();

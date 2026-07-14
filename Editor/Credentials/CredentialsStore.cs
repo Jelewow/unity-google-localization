@@ -1,27 +1,23 @@
 using System;
-using UnityEditor;
 
 namespace SheetsLocalization.Editor.Credentials
 {
     /// <summary>
-    /// Persists <see cref="GoogleCredentials"/> in per-project <see cref="EditorPrefs"/>.
-    /// EditorPrefs lives outside the project folder, so secrets can never be committed to source control.
-    /// Keys are scoped by <see cref="PlayerSettings.productGUID"/> so different projects on the same machine don't collide.
+    /// Persists <see cref="GoogleCredentials"/> in per-project <see cref="ProjectPrefs"/> (EditorPrefs).
+    /// Secrets live outside the project folder and can never be committed to source control.
     /// </summary>
     public static class CredentialsStore
     {
-        private const string Prefix = "SheetsLocalization";
-
         public static GoogleCredentials Load()
         {
             var credentials = new GoogleCredentials
             {
-                ApiKey = EditorPrefs.GetString(Key("ApiKey"), string.Empty),
-                ServiceAccountEmail = EditorPrefs.GetString(Key("ServiceAccountEmail"), string.Empty),
-                ServiceAccountKeyPath = EditorPrefs.GetString(Key("ServiceAccountKeyPath"), string.Empty)
+                ApiKey = ProjectPrefs.GetString("ApiKey", string.Empty),
+                ServiceAccountEmail = ProjectPrefs.GetString("ServiceAccountEmail", string.Empty),
+                ServiceAccountKeyPath = ProjectPrefs.GetString("ServiceAccountKeyPath", string.Empty)
             };
 
-            var authTypeRaw = EditorPrefs.GetString(Key("AuthType"), GoogleAuthType.ApiKey.ToString());
+            var authTypeRaw = ProjectPrefs.GetString("AuthType", GoogleAuthType.ApiKey.ToString());
             credentials.AuthType = Enum.TryParse(authTypeRaw, out GoogleAuthType authType)
                 ? authType
                 : GoogleAuthType.ApiKey;
@@ -34,22 +30,18 @@ namespace SheetsLocalization.Editor.Credentials
             if (credentials == null)
                 throw new ArgumentNullException(nameof(credentials));
 
-            EditorPrefs.SetString(Key("AuthType"), credentials.AuthType.ToString());
-            EditorPrefs.SetString(Key("ApiKey"), credentials.ApiKey ?? string.Empty);
-            EditorPrefs.SetString(Key("ServiceAccountEmail"), credentials.ServiceAccountEmail ?? string.Empty);
-            EditorPrefs.SetString(Key("ServiceAccountKeyPath"), credentials.ServiceAccountKeyPath ?? string.Empty);
+            ProjectPrefs.SetString("AuthType", credentials.AuthType.ToString());
+            ProjectPrefs.SetString("ApiKey", credentials.ApiKey);
+            ProjectPrefs.SetString("ServiceAccountEmail", credentials.ServiceAccountEmail);
+            ProjectPrefs.SetString("ServiceAccountKeyPath", credentials.ServiceAccountKeyPath);
         }
 
         public static void Clear()
         {
-            EditorPrefs.DeleteKey(Key("AuthType"));
-            EditorPrefs.DeleteKey(Key("ApiKey"));
-            EditorPrefs.DeleteKey(Key("ServiceAccountEmail"));
-            EditorPrefs.DeleteKey(Key("ServiceAccountKeyPath"));
+            ProjectPrefs.DeleteKey("AuthType");
+            ProjectPrefs.DeleteKey("ApiKey");
+            ProjectPrefs.DeleteKey("ServiceAccountEmail");
+            ProjectPrefs.DeleteKey("ServiceAccountKeyPath");
         }
-
-        // ponytail: values are stored as plaintext in the OS registry/plist (EditorPrefs).
-        // Good enough for local editor secrets; upgrade path is an OS keychain/credential-manager backend.
-        private static string Key(string name) => $"{Prefix}.{PlayerSettings.productGUID}.{name}";
     }
 }

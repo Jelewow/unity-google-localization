@@ -2,21 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEngine;
 using SheetsLocalization.Editor.Types;
 
 namespace SheetsLocalization.Editor.Configurators
 {
-    [CreateAssetMenu(menuName = "Sheets Localization/Configurators/Scenario Column Configurator")]
-    public class ScenarioColumnConfigurator : GoogleSheetsConfigurator
+    /// <summary>
+    /// Default parser: first column is the entry id, every other column header is a locale code.
+    /// Keys are prefixed with the (lowercased) spreadsheet title; rows whose id starts with '#' are skipped.
+    /// </summary>
+    [Serializable]
+    public class DefaultColumnConfigurator : GoogleSheetsConfigurator
     {
         public override string SchemeHint
         {
             get
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("Parsing with columns: id | de | en | ...");
-                sb.AppendLine("Each entry key is prefixed with the table key prefix (lowercased).");
+                sb.AppendLine("Columns: id | de | en | ...");
+                sb.AppendLine("Each entry key is prefixed with the spreadsheet title (lowercased).");
                 sb.Append("A '#' at the start of the id cell marks a comment row that is skipped.");
                 return sb.ToString();
             }
@@ -72,7 +75,7 @@ namespace SheetsLocalization.Editor.Configurators
 
             var headers = rawData.Headers;
             if (headers.Count < 2)
-                throw new Exception("The sheet must contain at least 2 columns (ID + at least one locale)");
+                throw new Exception("The sheet must contain at least 2 columns (id + at least one locale)");
 
             var hasValidData = rawData.DataRows.Any(row =>
                 row.Count > 0 &&
@@ -81,7 +84,7 @@ namespace SheetsLocalization.Editor.Configurators
             );
 
             if (!hasValidData)
-                throw new Exception("No rows with valid data found (ID + at least one localized value)");
+                throw new Exception("No rows with valid data found (id + at least one localized value)");
 
             return true;
         }

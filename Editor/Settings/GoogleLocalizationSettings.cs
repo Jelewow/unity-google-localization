@@ -1,4 +1,5 @@
 using SheetsLocalization.Editor.Configurators;
+using SheetsLocalization.Editor.Credentials;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine;
@@ -7,41 +8,39 @@ namespace SheetsLocalization.Editor.Settings
 {
     /// <summary>
     /// Serializable configuration for a localization sync target: source links, generated table
-    /// references, output folders and the parsing configurator. Credentials are intentionally
-    /// NOT stored here — they live per-user in <c>CredentialsStore</c> and never get committed.
+    /// references, output folders and the parsing configurator. Credentials and default output paths
+    /// live per-user in the Sheets Localization settings window and never get committed.
     /// </summary>
     [CreateAssetMenu(menuName = "Sheets Localization/Localization Settings")]
     public class GoogleLocalizationSettings : ScriptableObject
     {
-        [Tooltip("Addressables group name to assign the generated tables and audio to. Leave empty to skip Addressables assignment.")]
-        [SerializeField] private string bundleName;
-
         [SerializeField] private string googleSheetsLink;
         [SerializeField] private string googleDriveFolderLink;
 
         [SerializeField] private StringTableCollection localTable;
         [SerializeField] private AssetTableCollection localAudioTable;
 
-        [SerializeField] private string localTableFolderPath;
-        [SerializeField] private string localAudioFolderPath;
+        [SerializeField] private string addressableGroup;
 
-        [Tooltip("Use the spreadsheet title as the table key prefix instead of the value below.")]
-        [SerializeField] private bool dontUseTableKeyPrefix;
+        [SerializeField] private bool overrideTextPath;
+        [SerializeField] private string textPath = DefaultPathsStore.DefaultTextPath;
+        [SerializeField] private bool overrideAudioPath;
+        [SerializeField] private string audioPath = DefaultPathsStore.DefaultAudioPath;
 
-        [SerializeField] private string tableKeyPrefix;
+        [SerializeReference] private GoogleSheetsConfigurator configurator = new DefaultColumnConfigurator();
 
-        [SerializeField] private GoogleSheetsConfigurator sheetsConfigurator;
-
-        public string BundleName => bundleName;
         public string SheetsLink => googleSheetsLink;
         public string DriveFolderLink => googleDriveFolderLink;
         public StringTableCollection StringTable => localTable;
         public AssetTableCollection AudioTable => localAudioTable;
-        public string StringTableFolderPath => localTableFolderPath;
-        public string AudioFolderPath => localAudioFolderPath;
-        public bool UseSpreadsheetTitleAsPrefix => dontUseTableKeyPrefix;
-        public string TableKeyPrefix => tableKeyPrefix;
-        public GoogleSheetsConfigurator Configurator => sheetsConfigurator;
+        public string AddressableGroup => addressableGroup;
+        public GoogleSheetsConfigurator Configurator => configurator;
+
+        public string StringTableFolderPath =>
+            overrideTextPath && !string.IsNullOrEmpty(textPath) ? textPath : DefaultPathsStore.LoadTextPath();
+
+        public string AudioFolderPath =>
+            overrideAudioPath && !string.IsNullOrEmpty(audioPath) ? audioPath : DefaultPathsStore.LoadAudioPath();
 
         internal void SetStringTable(StringTableCollection value)
         {
@@ -52,12 +51,6 @@ namespace SheetsLocalization.Editor.Settings
         internal void SetAudioTable(AssetTableCollection value)
         {
             localAudioTable = value;
-            EditorUtility.SetDirty(this);
-        }
-
-        internal void SetResolvedTableKeyPrefix(string value)
-        {
-            tableKeyPrefix = value;
             EditorUtility.SetDirty(this);
         }
     }

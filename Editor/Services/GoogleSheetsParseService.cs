@@ -29,10 +29,7 @@ namespace SheetsLocalization.Editor.Services
             _authService = authService;
         }
 
-        public async Task<RawSheetData> GetRawSheetDataAsync(string sheetUrl,
-            string sheetName = null,
-            string tableKeyPrefix = null,
-            bool useSpreadsheetTitleAsPrefix = false)
+        public async Task<RawSheetData> GetRawSheetDataAsync(string sheetUrl, string sheetName = null)
         {
             try
             {
@@ -56,12 +53,9 @@ namespace SheetsLocalization.Editor.Services
                 Debug.Log($"Using sheet: {sheetName}");
                 var rows = await FetchSheetValuesAsync(spreadsheetId, sheetName);
 
-                var resolvedKeyPrefix = useSpreadsheetTitleAsPrefix || string.IsNullOrEmpty(tableKeyPrefix)
-                    ? spreadsheetTitle
-                    : tableKeyPrefix;
                 return new RawSheetData
                 {
-                    TableKeyPrefix = resolvedKeyPrefix,
+                    TableKeyPrefix = spreadsheetTitle,
                     SheetName = sheetName,
                     Rows = rows
                 };

@@ -80,7 +80,7 @@ namespace SheetsLocalization.Editor.Services
             return audioClips;
         }
 
-        public AssetTableData UpdateAudioTableData(AssetTableData assetTableData, Dictionary<string, AudioClip> audioClips, string tablePath, string bundleName = null, bool removeObsoleteEntries = false)
+        public AssetTableData UpdateAudioTableData(AssetTableData assetTableData, Dictionary<string, AudioClip> audioClips, string tablePath, string addressableGroup = null, bool removeObsoleteEntries = false)
         {
             if (audioClips == null || audioClips.Count == 0)
             {
@@ -88,7 +88,7 @@ namespace SheetsLocalization.Editor.Services
                 return assetTableData;
             }
 
-            var result = UpdateAudioTableDataInternal(assetTableData, audioClips, tablePath, bundleName, removeObsoleteEntries);
+            var result = UpdateAudioTableDataInternal(assetTableData, audioClips, tablePath, addressableGroup, removeObsoleteEntries);
             return result;
         }
 
@@ -115,14 +115,14 @@ namespace SheetsLocalization.Editor.Services
             }
         }
 
-        private AssetTableData UpdateAudioTableDataInternal(AssetTableData assetTableData, Dictionary<string, AudioClip> audioClips, string tablePath, string bundleName = null, bool removeObsoleteEntries = false)
+        private AssetTableData UpdateAudioTableDataInternal(AssetTableData assetTableData, Dictionary<string, AudioClip> audioClips, string tablePath, string addressableGroup = null, bool removeObsoleteEntries = false)
         {
-            var updatedData = UpdateLocalizedAssetTable(assetTableData, audioClips, tablePath, bundleName, removeObsoleteEntries);
+            var updatedData = UpdateLocalizedAssetTable(assetTableData, audioClips, tablePath, addressableGroup, removeObsoleteEntries);
             Debug.Log("Audio localization updated successfully.");
             return updatedData;
         }
 
-        private AssetTableData UpdateLocalizedAssetTable(AssetTableData assetTableData, Dictionary<string, AudioClip> audioClips, string tablePath, string bundleName = null, bool removeObsoleteEntries = false)
+        private AssetTableData UpdateLocalizedAssetTable(AssetTableData assetTableData, Dictionary<string, AudioClip> audioClips, string tablePath, string addressableGroup = null, bool removeObsoleteEntries = false)
         {
             var assetTableCollection = assetTableData.Table;
 
@@ -155,10 +155,9 @@ namespace SheetsLocalization.Editor.Services
                 EditorUtility.SetDirty(table);
             }
 
-            if (!string.IsNullOrEmpty(bundleName))
+            if (!string.IsNullOrEmpty(addressableGroup))
             {
-                var bundleAssignmentService = new AssetBundleAssignmentService();
-                bundleAssignmentService.AssignAddressableGroupToTables(bundleName, null, assetTableCollection);
+                new AddressableGroupService().AssignGroupToTables(addressableGroup, null, assetTableCollection);
             }
 
             AssetDatabase.SaveAssets();

@@ -11,15 +11,15 @@ using System.Collections.Generic;
 
 namespace SheetsLocalization.Editor.Services
 {
-    public class AssetBundleAssignmentService
+    /// <summary>
+    /// Assigns generated localization tables and audio clips to an existing Addressables group and label.
+    /// </summary>
+    public class AddressableGroupService
     {
-        public void AssignAddressableGroupToTables(string groupName, StringTableCollection stringTableCollection, AssetTableCollection assetTableCollection)
+        public void AssignGroupToTables(string groupName, StringTableCollection stringTableCollection, AssetTableCollection assetTableCollection)
         {
             if (string.IsNullOrEmpty(groupName))
-            {
-                Debug.LogWarning("AssetBundleAssignmentService: group name is empty, assignment skipped");
                 return;
-            }
 
             var settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
             if (settings == null)
@@ -28,10 +28,10 @@ namespace SheetsLocalization.Editor.Services
                 return;
             }
 
-            AddressableAssetGroup group = settings.FindGroup(groupName);
+            var group = settings.FindGroup(groupName);
             if (group == null)
             {
-                Debug.LogWarning($"Addressables group '{groupName}' not found. Tables will not be added to the group.");
+                Debug.LogWarning($"Addressables group '{groupName}' not found. Tables were not added to the group.");
                 return;
             }
 
@@ -50,9 +50,7 @@ namespace SheetsLocalization.Editor.Services
                 foreach (var stringTable in stringTableCollection.StringTables)
                 {
                     if (stringTable != null)
-                    {
                         assignedCount += AssignGroupToAsset(settings, group, stringTable);
-                    }
                 }
             }
 
@@ -64,48 +62,39 @@ namespace SheetsLocalization.Editor.Services
                 foreach (var assetTable in assetTableCollection.AssetTables)
                 {
                     if (assetTable != null)
-                    {
                         assignedCount += AssignGroupToAsset(settings, group, assetTable);
-                    }
                 }
             }
 
             if (assignedCount > 0)
-            {
-                Debug.Log($"AssetBundleAssignmentService: assigned group '{groupName}' to {assignedCount} localization tables");
-            }
+                Debug.Log($"Addressables: assigned group '{groupName}' to {assignedCount} localization tables");
         }
 
         public void ValidateAndAssignGroupToAllAssets(string groupName, string audioDirectory,
             StringTableCollection stringTableCollection, AssetTableCollection assetTableCollection)
         {
             if (string.IsNullOrEmpty(groupName))
-            {
-                Debug.LogWarning("AssetBundleAssignmentService: group name is empty, validation skipped");
                 return;
-            }
 
-            Debug.Log($"AssetBundleAssignmentService: validating and assigning group '{groupName}' to all assets");
+            Debug.Log($"Addressables: validating and assigning group '{groupName}' to all assets");
 
             AssignGroupToAudioFiles(groupName, audioDirectory);
-            AssignAddressableGroupToTables(groupName, stringTableCollection, assetTableCollection);
+            AssignGroupToTables(groupName, stringTableCollection, assetTableCollection);
 
-            AddressableAssetSettingsDefaultObject.GetSettings(true).SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true);
+            AddressableAssetSettingsDefaultObject.GetSettings(true)
+                .SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true);
 
-            Debug.Log("AssetBundleAssignmentService: validation and assignment completed");
+            Debug.Log("Addressables: validation and assignment completed");
         }
 
         private void AssignGroupToAudioFiles(string groupName, string audioDirectory)
         {
             if (string.IsNullOrEmpty(groupName))
-            {
-                Debug.LogWarning("AssetBundleAssignmentService: group name is empty, assignment skipped");
                 return;
-            }
 
             if (string.IsNullOrEmpty(audioDirectory) || !Directory.Exists(audioDirectory))
             {
-                Debug.LogError($"AssetBundleAssignmentService: audio directory not found or empty: {audioDirectory}");
+                Debug.LogError($"Addressables: audio directory not found or empty: {audioDirectory}");
                 return;
             }
 
@@ -116,7 +105,7 @@ namespace SheetsLocalization.Editor.Services
                 return;
             }
 
-            AddressableAssetGroup group = settings.FindGroup(groupName);
+            var group = settings.FindGroup(groupName);
             if (group == null)
             {
                 Debug.Log($"Addressables group '{groupName}' not found. Creating a new group.");
@@ -139,7 +128,7 @@ namespace SheetsLocalization.Editor.Services
                     var guid = AssetDatabase.AssetPathToGUID(assetPath);
                     if (string.IsNullOrEmpty(guid)) continue;
 
-                    AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group, false, false);
+                    var entry = settings.CreateOrMoveEntry(guid, group, false, false);
                     if (entry != null)
                     {
                         entry.address = Path.GetFileNameWithoutExtension(assetPath);
@@ -150,9 +139,7 @@ namespace SheetsLocalization.Editor.Services
             }
 
             if (assignedCount > 0)
-            {
-                Debug.Log($"AssetBundleAssignmentService: assigned group '{groupName}' to {assignedCount} audio files");
-            }
+                Debug.Log($"Addressables: assigned group '{groupName}' to {assignedCount} audio files");
         }
 
         private int AssignGroupToAsset(AddressableAssetSettings settings, AddressableAssetGroup group, Object asset)
@@ -181,15 +168,11 @@ namespace SheetsLocalization.Editor.Services
             foreach (var label in entry.labels)
             {
                 if (label != newLabel && !label.StartsWith("Locale-"))
-                {
                     labelsToRemove.Add(label);
-                }
             }
 
             foreach (var label in labelsToRemove)
-            {
                 entry.SetLabel(label, false);
-            }
 
             entry.SetLabel(newLabel, true);
         }

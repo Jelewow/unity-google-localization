@@ -17,7 +17,7 @@ This produces the localization keys:
 ## Usage
 
 1. Import this sample via the Package Manager.
-2. Create the asset: `Assets > Create > Sheets Localization > Configurators > Samples > Suffix Column Configurator`.
-3. Assign it to your `Localization Settings` asset and run **Update texts**.
+2. Select your `Localization Settings` asset and pick **Suffix Column Configurator** from the **Configurator** dropdown (it appears automatically once the sample compiles — no asset to create).
+3. Adjust the `locales` array in the inspector, then run **Update texts**.
 
-Adjust the `locales` array and the parsing rules to match your own spreadsheet.
+Edit the parsing rules to match your own spreadsheet.

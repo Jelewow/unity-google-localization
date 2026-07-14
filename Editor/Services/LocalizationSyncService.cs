@@ -54,13 +54,9 @@ namespace SheetsLocalization.Editor.Services
             var localeUpdater = new LocalizationUpdateService();
 
             Debug.Log("Starting text update...");
-            Debug.Log($"Using configurator: {settings.Configurator.SchemeHint}");
+            Debug.Log($"Using configurator: {settings.Configurator.GetType().Name}");
 
-            var rawData = await sheetsParser.GetRawSheetDataAsync(
-                settings.SheetsLink, null, settings.TableKeyPrefix, settings.UseSpreadsheetTitleAsPrefix);
-
-            if (settings.UseSpreadsheetTitleAsPrefix || string.IsNullOrEmpty(settings.TableKeyPrefix))
-                settings.SetResolvedTableKeyPrefix(rawData.TableKeyPrefix);
+            var rawData = await sheetsParser.GetRawSheetDataAsync(settings.SheetsLink);
 
             if (!settings.Configurator.ValidateData(rawData))
                 throw new Exception("Data validation failed");
@@ -68,7 +64,7 @@ namespace SheetsLocalization.Editor.Services
             var sheetData = settings.Configurator.ParseSheetData(rawData);
             var stringTableData = new StringTableData { Table = settings.StringTable, Data = sheetData };
             var updatedData = localeUpdater.UpdateProjectData(
-                stringTableData, settings.StringTableFolderPath, settings.BundleName, true);
+                stringTableData, settings.StringTableFolderPath, settings.AddressableGroup, true);
 
             if (settings.StringTable == null && updatedData.Table != null)
             {
@@ -76,7 +72,7 @@ namespace SheetsLocalization.Editor.Services
                 Debug.Log($"Updated StringTableCollection reference: {updatedData.Table.TableCollectionName}");
             }
 
-            new AssetBundleAssignmentService().AssignAddressableGroupToTables(settings.BundleName, settings.StringTable, null);
+            new AddressableGroupService().AssignGroupToTables(settings.AddressableGroup, settings.StringTable, null);
 
             AssetDatabase.SaveAssets();
 
@@ -120,7 +116,7 @@ namespace SheetsLocalization.Editor.Services
 
             var audioClips = audioUpdateService.LoadAudioClipsFromDirectory(settings.AudioFolderPath);
             var updatedAssetData = audioUpdateService.UpdateAudioTableData(
-                assetTableData, audioClips, settings.StringTableFolderPath, settings.BundleName, true);
+                assetTableData, audioClips, settings.AudioFolderPath, settings.AddressableGroup, true);
 
             if (settings.AudioTable == null && updatedAssetData.Table != null)
             {
@@ -128,8 +124,8 @@ namespace SheetsLocalization.Editor.Services
                 Debug.Log($"Updated AssetTableCollection reference: {updatedAssetData.Table.TableCollectionName}");
             }
 
-            new AssetBundleAssignmentService().ValidateAndAssignGroupToAllAssets(
-                settings.BundleName, settings.AudioFolderPath, settings.StringTable, settings.AudioTable);
+            new AddressableGroupService().ValidateAndAssignGroupToAllAssets(
+                settings.AddressableGroup, settings.AudioFolderPath, settings.StringTable, settings.AudioTable);
 
             AssetDatabase.SaveAssets();
         }
@@ -139,16 +135,16 @@ namespace SheetsLocalization.Editor.Services
             if (settings == null)
                 throw new ArgumentNullException(nameof(settings));
 
-            if (string.IsNullOrEmpty(settings.BundleName))
+            if (string.IsNullOrEmpty(settings.AddressableGroup))
             {
-                Debug.LogWarning("BundleName is empty. Set the Addressables group name before running validation.");
+                Debug.LogWarning("Addressable group is empty. Set it before running validation.");
                 return;
             }
 
-            Debug.Log($"Validating and assigning group '{settings.BundleName}' to all localization files...");
+            Debug.Log($"Validating and assigning group '{settings.AddressableGroup}' to all localization files...");
 
-            new AssetBundleAssignmentService().ValidateAndAssignGroupToAllAssets(
-                settings.BundleName, settings.AudioFolderPath, settings.StringTable, settings.AudioTable);
+            new AddressableGroupService().ValidateAndAssignGroupToAllAssets(
+                settings.AddressableGroup, settings.AudioFolderPath, settings.StringTable, settings.AudioTable);
 
             AssetDatabase.SaveAssets();
             Debug.Log("Group validation completed.");

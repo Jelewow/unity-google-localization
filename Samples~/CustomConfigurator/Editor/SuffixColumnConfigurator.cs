@@ -8,13 +8,15 @@ using UnityEngine;
 namespace SheetsLocalization.Samples
 {
     /// <summary>
-    /// Example configurator that reads columns named "<locale>-<suffix>" (e.g. "en-name", "de-name",
-    /// "en-description") and produces entry keys "<id>-<suffix>". Useful when one spreadsheet row
+    /// Example configurator that reads columns named "&lt;locale&gt;-&lt;suffix&gt;" (e.g. "en-name", "de-name",
+    /// "en-description") and produces entry keys "&lt;id&gt;-&lt;suffix&gt;". Useful when one spreadsheet row
     /// describes an object with several localized fields.
     ///
-    /// Import this sample from the Package Manager and adapt it to your own sheet layout.
+    /// It is a plain [Serializable] class deriving from GoogleSheetsConfigurator: once this file is in the
+    /// project, the type appears in the "Configurator" dropdown on the Localization Settings asset — no
+    /// ScriptableObject asset to create. Import this sample and adapt it to your own sheet layout.
     /// </summary>
-    [CreateAssetMenu(menuName = "Sheets Localization/Configurators/Samples/Suffix Column Configurator")]
+    [Serializable]
     public class SuffixColumnConfigurator : GoogleSheetsConfigurator
     {
         [SerializeField] private string[] locales = { "en", "de" };

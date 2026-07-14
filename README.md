@@ -1,5 +1,11 @@
 # Sheets Localization Sync
 
+![Unity](https://img.shields.io/badge/Unity-2022.3%2B-000000?logo=unity&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-9.0-239120?logo=csharp&logoColor=white)
+![Google](https://img.shields.io/badge/Google-Sheets%20%26%20Drive-4285F4?logo=google&logoColor=white)
+![Unity Localization](https://img.shields.io/badge/Unity-Localization-black?logo=unity&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
 A Unity **Editor** tool that imports and synchronizes localized **strings** (from Google Sheets) and **audio** (from Google Drive) directly into [Unity Localization](https://docs.unity3d.com/Packages/com.unity.localization@latest) tables, with optional [Addressables](https://docs.unity3d.com/Packages/com.unity.addressables@latest) group/label assignment.
 
 It turns a spreadsheet-driven localization workflow (translators edit Google Sheets, voice-over lands in a Drive folder) into a one-click sync inside the Unity Editor.
@@ -9,14 +15,14 @@ It turns a spreadsheet-driven localization workflow (translators edit Google She
 ## Features
 
 - Import localized strings from **Google Sheets** into `StringTableCollection`s.
-- Sync localized audio from **Google Drive** folders into `AssetTableCollection`s (with MD5 change detection and safe-delete guards).
+- Sync localized audio from **Google Drive** folders into `AssetTableCollection`s (MD5 change detection and safe-delete guards).
 - **Incremental** updates: add new keys, update changed values, optionally remove obsolete entries.
-- **Pluggable parsing**: derive from `GoogleSheetsConfigurator` (a `ScriptableObject`) to support any sheet layout and run custom post-processing.
-- Two built-in configurators: `StandardColumnConfigurator` and `ScenarioColumnConfigurator`.
+- **Pluggable parsing**: derive from `GoogleSheetsConfigurator` — a plain `[Serializable]` class picked inline on the settings asset (`[SerializeReference]`), no extra asset to manage.
 - Two authentication modes: **API key** (public documents) or **service account** (private documents, RS256 JWT flow implemented without external crypto libraries).
-- Optional **Addressables** group and label assignment for the generated tables and audio clips.
+- **Secrets stay out of source control**: credentials and default paths live per-project in `EditorPrefs`, never in a committed asset.
+- Optional **Addressables** group and label assignment, selected from a dropdown of existing groups.
 - Auto-creates missing `Locale` assets from ISO-like locale codes.
-- **No paid dependencies** — no Odin Inspector; the inspector UI is built with Unity's built-in IMGUI.
+- **No paid dependencies** — no Odin Inspector; the UI is built with Unity's IMGUI.
 
 ## Requirements
 
@@ -47,59 +53,69 @@ Or add it to `Packages/manifest.json`:
 }
 ```
 
+To pin a specific version, append a release tag, e.g. `...unity-google-localization.git#v0.2.0`.
+
 ## Quick start
 
-1. Create a settings asset: `Assets > Create > Sheets Localization > Localization Settings`.
-2. Create a configurator asset: `Assets > Create > Sheets Localization > Configurators > Standard Column Configurator`.
-3. In the settings asset:
-   - Fill in **credentials** (API key or service account — see below).
-   - Set **Google Sheets Link** (and optionally **Google Drive Folder Link** for audio).
-   - Assign the **configurator**.
-   - Set **Local Table Folder Path** (where the generated tables live, e.g. `Assets/Localization/MyScene`).
-   - (Optional) Set **Bundle Name** to an existing Addressables group name to auto-assign tables/audio.
-4. Click **Test authentication**, then **Update texts** and/or **Update audio files**.
+1. Open **`Tools > Sheets Localization > Settings`** and fill in:
+   - **Credentials** — API key, or service account email + JSON key path (see below).
+   - **Default output paths** — where generated string tables and audio go by default.
+2. Create a settings asset: `Assets > Create > Sheets Localization > Localization Settings`.
+3. Select the asset and set:
+   - **Google Sheets link** (and optionally **Google Drive folder link** for audio).
+   - **Configurator** — pick one from the dropdown (built-in `Default Column Configurator`, or your own).
+   - **Addressable group** — pick an existing group from the dropdown (optional).
+   - Path **overrides** — only if this asset needs folders different from the defaults.
+4. Click **Test authentication**, then **Update texts** and/or **Update audio**.
 
 ## Sheet layout
 
-The built-in configurators expect the first row to be a header.
+The built-in `Default Column Configurator` expects the first row to be a header:
 
-`StandardColumnConfigurator` / `ScenarioColumnConfigurator`:
+| id        | en           | de              | ru      |
+|-----------|--------------|-----------------|---------|
+| greeting  | Hello        | Hallo           | Привет  |
+| farewell  | Goodbye      | Auf Wiedersehen | Пока    |
 
-| id        | en           | de            | ru          |
-|-----------|--------------|---------------|-------------|
-| greeting  | Hello        | Hallo         | Привет      |
-| farewell  | Goodbye      | Auf Wiedersehen | Пока      |
-
-- Column 1 is the **entry key**.
+- Column 1 is the **entry id**.
 - Every other column header is a **locale code** (`en`, `de`, `ru`, `zh-cn`, ...).
-- `ScenarioColumnConfigurator` additionally prefixes keys with the table key prefix and skips rows whose id starts with `#` (comment rows).
+- Keys are prefixed with the (lowercased) spreadsheet title.
+- Rows whose id starts with `#` are treated as comments and skipped.
 
 ### Audio naming
 
-Audio files in the Drive folder must be named `key_locale`, e.g. `greeting_en.mp3`, `greeting_de.mp3`. They are grouped by key into an `AssetTableCollection`.
+Audio files in the Drive folder must be named `key_locale`, e.g. `greeting_en.mp3`, `greeting_de.mp3` (region codes like `greeting_zh-cn.mp3` are supported). They are grouped by key into an `AssetTableCollection`.
 
-## Authentication
+## Credentials & paths
 
-Credentials are stored on the settings asset (no secrets are hardcoded in the package).
+Credentials and default output paths are stored per-project in `EditorPrefs` via the **`Tools > Sheets Localization > Settings`** window — nothing is written to a committed asset.
 
-- **API key** — works for publicly shared spreadsheets/folders. Set `Auth Type = ApiKey` and paste your key.
-- **Service account** — required for private documents. Set `Auth Type = ServiceAccount`, fill the service account email and either the path to the JSON key file or the inline JSON. Share the spreadsheet/folder with the service account email.
+- **API key** — works for **publicly shared** spreadsheets/folders (`Anyone with the link`). Tick *Use API key* and paste the key.
+- **Service account** — required for **private** documents. Untick *Use API key*, set the service account email and the path to its JSON key file, then share the spreadsheet/folder with that email.
 
-> Security: never commit real API keys or service account JSON to source control. Keep key files outside the repo (the sample `.gitignore` already excludes common key file names). Grant the service account the minimum required scopes (`spreadsheets.readonly`, `drive.readonly`).
+> Security: never commit real API keys or service account JSON. Keep key files outside the repo. Grant the service account the minimum scopes (`spreadsheets.readonly`, `drive.readonly`).
+
+## Output
+
+- **Addressable group** — choose an existing Addressables group from the dropdown; the generated tables, shared data and audio clips are added to it and labelled. Leave it as `(None)` to skip.
+- **Paths** — each settings asset uses the window's default paths unless you tick *Override* and provide a custom folder.
 
 ## Extending: custom configurator
 
-Derive from `GoogleSheetsConfigurator` to parse any layout. See the **Custom Configurator Example** sample (import it from the Package Manager) for a complete, commented template.
+Derive from `GoogleSheetsConfigurator`. Because it's a plain `[Serializable]` class, once the file compiles it appears in the **Configurator** dropdown on the settings asset — no asset to create. See the **Custom Configurator Example** sample (import it from the Package Manager) for a complete, commented template.
 
 ```csharp
+using System;
 using System.Collections.Generic;
 using SheetsLocalization.Editor.Configurators;
 using SheetsLocalization.Editor.Types;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Sheets Localization/Configurators/My Configurator")]
+[Serializable]
 public class MyConfigurator : GoogleSheetsConfigurator
 {
+    [SerializeField] private string[] locales = { "en", "de" }; // your own inspector fields
+
     public override string SchemeHint => "id | en | de";
 
     public override bool ValidateData(RawSheetData rawData) => rawData.Rows != null && rawData.Rows.Count >= 2;
@@ -124,7 +140,7 @@ public class MyConfigurator : GoogleSheetsConfigurator
 ## Assembly / namespaces
 
 - Assembly: `SheetsLocalization.Editor` (Editor platform only).
-- Root namespace: `SheetsLocalization.Editor` (`.Services`, `.Configurators`, `.Types`, `.Settings`, `.Credentials`, `.Inspectors`).
+- Root namespace: `SheetsLocalization.Editor` (`.Services`, `.Configurators`, `.Types`, `.Settings`, `.Credentials`, `.Inspectors`, `.Windows`).
 
 ## License
 

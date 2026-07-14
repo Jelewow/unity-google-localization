@@ -1,14 +1,16 @@
+using System;
 using SheetsLocalization.Editor.Types;
 using UnityEditor.Localization;
-using UnityEngine;
 
 namespace SheetsLocalization.Editor.Configurators
 {
     /// <summary>
-    /// Base class for pluggable Google Sheets parsers. Derive from it to support
-    /// custom sheet layouts and post-processing after the table is created.
+    /// Base class for pluggable Google Sheets parsers. Derive from it to support custom sheet
+    /// layouts and post-processing. It is a plain <c>[Serializable]</c> class (not a ScriptableObject),
+    /// selected inline on the settings asset via <c>[SerializeReference]</c> — no separate asset to manage.
     /// </summary>
-    public abstract class GoogleSheetsConfigurator : ScriptableObject
+    [Serializable]
+    public abstract class GoogleSheetsConfigurator
     {
         /// <summary>Human-readable description of the expected sheet layout, shown in the inspector.</summary>
         public abstract string SchemeHint { get; }
@@ -22,7 +24,6 @@ namespace SheetsLocalization.Editor.Configurators
         /// <summary>Optional hook invoked after the localization table has been created/updated.</summary>
         public virtual void UpdateAfterTableCreated(StringTableCollection stringTableCollection)
         {
-            Debug.Log($"{GetType().Name} finished.");
         }
     }
 }
