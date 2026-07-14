@@ -231,41 +231,30 @@ namespace SheetsLocalization.Editor.Services
         private string GetDetailedErrorMessage(string error, long responseCode, string responseText)
         {
             var baseMessage = $"{error} (HTTP {responseCode})";
+            var authType = _authService.CurrentAuthType == GoogleAuthType.ServiceAccount ? "the service account" : "the API key";
 
-            switch (responseCode)
+            var hint = responseCode switch
             {
-                case 401:
-                    return $"{baseMessage}\n" +
-                           "ERROR 401 UNAUTHORIZED - authentication problem:\n" +
-                           "- Check the authentication settings\n" +
-                           "- Service account: make sure the JSON key is valid\n" +
-                           "- API key: make sure the key is correct";
+                401 => "ERROR 401 UNAUTHORIZED - authentication problem:\n" +
+                       "- Check the authentication settings\n" +
+                       "- Service account: make sure the JSON key is valid\n" +
+                       "- API key: make sure the key is correct",
+                403 => $"ERROR 403 FORBIDDEN - access denied for {authType}:\n" +
+                       "1. For API key auth the document must be shared as 'Anyone with the link'\n" +
+                       "2. For service account auth share the document with the service account email\n" +
+                       "3. Enable the Google Sheets API in the Google Cloud Console for the key's project\n" +
+                       "4. Remove HTTP referrer / IP restrictions from the API key, or allow the Sheets API",
+                404 => "ERROR 404 NOT FOUND:\n" +
+                       "- Check that the document URL is correct\n" +
+                       "- Make sure the document exists and is accessible",
+                429 => "ERROR 429 TOO MANY REQUESTS:\n" +
+                       "- API request limit exceeded\n" +
+                       "- Try again later",
+                _ => string.Empty
+            };
 
-                case 403:
-                    var authType = _authService.CurrentAuthType == GoogleAuthType.ServiceAccount ? "the service account" : "the API key";
-                    return $"{baseMessage}\n" +
-                           $"ERROR 403 FORBIDDEN - access denied for {authType}:\n" +
-                           "1. The document must be publicly accessible (for API key auth)\n" +
-                           "2. The service account must have access to the document\n" +
-                           "3. Enable the Google Sheets API in the Google Cloud Console\n" +
-                           "4. Check API quotas and limits";
-
-                case 404:
-                    return $"{baseMessage}\n" +
-                           "ERROR 404 NOT FOUND:\n" +
-                           "- Check that the document URL is correct\n" +
-                           "- Make sure the document exists and is accessible";
-
-                case 429:
-                    return $"{baseMessage}\n" +
-                           "ERROR 429 TOO MANY REQUESTS:\n" +
-                           "- API request limit exceeded\n" +
-                           "- Try again later";
-
-                default:
-                    var details = !string.IsNullOrEmpty(responseText) ? $"\nDetails: {responseText}" : "";
-                    return $"{baseMessage}{details}";
-            }
+            var details = string.IsNullOrEmpty(responseText) ? string.Empty : $"\nServer response: {responseText}";
+            return string.IsNullOrEmpty(hint) ? $"{baseMessage}{details}" : $"{baseMessage}\n{hint}{details}";
         }
     }
 }
