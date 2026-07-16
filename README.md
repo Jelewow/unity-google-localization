@@ -57,10 +57,19 @@ Or add the scoped registry to `Packages/manifest.json` manually:
     }
   ],
   "dependencies": {
-    "com.jelewow.unity-sheets-localization": "1.0.0"
+    "com.jelewow.unity-sheets-localization": "1.0.2"
   }
 }
 ```
+
+Versions **1.0.2+** are published as **Unity-signed** tarballs via GitHub Releases (no unsigned-package warning in Unity 6.3+).
+
+### Maintainer release (signed)
+
+1. Add GitHub repository secrets: `UPM_SERVICE_ACCOUNT_KEY_ID`, `UPM_SERVICE_ACCOUNT_KEY_SECRET`, `UPM_ORG_ID` (Unity service account with package signing permission).
+2. Bump `package.json` version, commit to `main`.
+3. Push a version tag: `git tag v1.0.2 && git push origin v1.0.2`
+4. CI packs with `upm pack`, attaches signed `.tgz` to the GitHub Release, then waits for OpenUPM.
 
 ### Via Git URL (quick, but no update notifications)
 
